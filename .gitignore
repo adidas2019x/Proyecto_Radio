@@ -1,0 +1,19 @@
+# Dependencias de Node
+node_modules/
+
+# Archivos de build de Android generados localmente (se rebuildan en CI)
+android/app/build/
+android/.gradle/
+android/build/
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Variables de entorno
+.env
+.env.local
