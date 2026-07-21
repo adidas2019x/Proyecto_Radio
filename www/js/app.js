@@ -78,7 +78,7 @@ const audioPlayer = document.getElementById('native-audio');
 function init() {
     loadFavorites();
     setupEventListeners();
-    cargarRadiosLaPaz();
+    cargarRadiosBolivia();
 }
 
 // ==========================================================================
@@ -256,12 +256,12 @@ function setupEventListeners() {
 // ==========================================================================
 // CÓDIGO PRINCIPAL / API
 // ==========================================================================
-async function cargarRadiosLaPaz() {
+async function cargarRadiosBolivia() {
     statusMessage.classList.remove('hidden');
     estacionesContainer.innerHTML = '';
     
     try {
-        const url = 'https://de1.api.radio-browser.info/json/stations/search?state=La+Paz&countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=100';
+        const url = 'https://de1.api.radio-browser.info/json/stations/search?countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=300';
         
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
@@ -278,7 +278,7 @@ async function cargarRadiosLaPaz() {
             name: station.name.trim(),
             url: station.url_resolved || station.url,
             tags: station.tags ? station.tags.split(',') : [],
-            state: station.state || 'La Paz',
+            state: station.state || 'Bolivia',
             favicon: station.favicon || ''
         }));
         
@@ -290,7 +290,7 @@ async function cargarRadiosLaPaz() {
         
     } catch (error) {
         console.error('Error fetching radios:', error);
-        statusMessage.innerHTML = `<span class="text-danger">⚠️ Error de conexión.</span><br><button onclick="cargarRadiosLaPaz()" class="mt-2 text-primary font-semibold underline">Reintentar</button>`;
+        statusMessage.innerHTML = `<span class="text-danger">⚠️ Error de conexión.</span><br><button onclick="cargarRadiosBolivia()" class="mt-2 text-primary font-semibold underline">Reintentar</button>`;
     }
 }
 
