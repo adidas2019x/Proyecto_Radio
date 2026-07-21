@@ -169,6 +169,29 @@ body {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
+/* ─── Cápsulas de Filtro (Chips) ─── */
+.genre-chip {
+    padding: 6px 14px;
+    background: var(--bg-card);
+    border: 1px solid var(--light-border);
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,.03);
+    transition: all .2s ease;
+    flex-shrink: 0;
+}
+.genre-chip:active { transform: scale(0.95); }
+.genre-chip.active {
+    background: var(--primary);
+    color: #ffffff;
+    border-color: var(--primary);
+    box-shadow: 0 3px 10px var(--primary-glow);
+}
+
 /* ─── Paginación ─── */
 .page-btn {
     display: flex; align-items: center; gap: 4px;

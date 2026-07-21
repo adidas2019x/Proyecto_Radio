@@ -9,9 +9,9 @@ let isPlaying = false;
 let isMuted = false;
 let previousVolume = 0.8;
 
-// Favoritos y Filtros
+// Favoritos y Filtro de Género
 let favorites = [];
-let showFavoritesOnly = false;
+let activeGenre = 'cumbia'; // Default inicial: Cumbia & Tropical
 
 // Paginación
 let currentPage = 1;
@@ -25,7 +25,7 @@ const fullPlayerView = document.getElementById('full-player-view');
 
 const searchInput = document.getElementById('search-input');
 const clearSearchBtn = document.getElementById('clear-search');
-const toggleFavoritesBtn = document.getElementById('toggle-favorites-btn');
+const genreChipsContainer = document.getElementById('genre-chips-container');
 const estacionesContainer = document.getElementById('estaciones-container');
 const statusMessage = document.getElementById('status-message');
 
@@ -78,7 +78,7 @@ const audioPlayer = document.getElementById('native-audio');
 function init() {
     loadFavorites();
     setupEventListeners();
-    cargarRadiosBolivia();
+    cargarEmisorasPorGenero(activeGenre);
 }
 
 // ==========================================================================
@@ -100,7 +100,7 @@ function saveFavorites() {
 }
 
 function toggleFavorite(id, e) {
-    e.stopPropagation(); // Evitar click en la tarjeta
+    e.stopPropagation();
     const index = favorites.indexOf(id);
     if (index > -1) {
         favorites.splice(index, 1);
@@ -109,8 +109,8 @@ function toggleFavorite(id, e) {
     }
     saveFavorites();
     
-    if (showFavoritesOnly) {
-        filtrarEstaciones(searchInput.value);
+    if (activeGenre === 'favorites') {
+        cargarEmisorasPorGenero('favorites');
     } else {
         renderListas();
     }
@@ -142,12 +142,10 @@ function setupEventListeners() {
     });
 
     searchInput.addEventListener('focus', () => {
-        // Ocultar mini reproductor mientras se escribe para dar espacio al teclado
         miniPlayer.classList.add('hidden');
     });
 
     searchInput.addEventListener('blur', () => {
-        // Restaurar mini reproductor al salir del campo de búsqueda si hay emisora
         if (currentStation) {
             miniPlayer.classList.remove('hidden');
         }
@@ -160,19 +158,16 @@ function setupEventListeners() {
         searchInput.focus();
     });
 
-    // --- Filtro Favoritos ---
-    toggleFavoritesBtn.addEventListener('click', () => {
-        showFavoritesOnly = !showFavoritesOnly;
-        if (showFavoritesOnly) {
-            toggleFavoritesBtn.classList.add('bg-primary', 'text-white', 'border-primary');
-            toggleFavoritesBtn.classList.remove('bg-white', 'text-secondary', 'border-light-border');
-            toggleFavoritesBtn.innerHTML = `<svg class="fav-icon-solid text-star" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Ocultar Favoritos`;
-        } else {
-            toggleFavoritesBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
-            toggleFavoritesBtn.classList.add('bg-white', 'text-secondary', 'border-light-border');
-            toggleFavoritesBtn.innerHTML = `<svg class="fav-icon-outline" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Ver Mis Favoritos`;
-        }
-        filtrarEstaciones(searchInput.value);
+    // --- Cápsulas de Género / Categoría ---
+    const chips = genreChipsContainer.querySelectorAll('.genre-chip');
+    chips.forEach(chip => {
+        chip.addEventListener('click', (e) => {
+            chips.forEach(c => c.classList.remove('active'));
+            const target = e.currentTarget;
+            target.classList.add('active');
+            activeGenre = target.dataset.genre;
+            cargarEmisorasPorGenero(activeGenre);
+        });
     });
 
     // --- Paginación ---
@@ -254,43 +249,84 @@ function setupEventListeners() {
 }
 
 // ==========================================================================
-// CÓDIGO PRINCIPAL / API
+// CONSULTA A LA API POR GÉNERO Y PAÍSES
 // ==========================================================================
-async function cargarRadiosBolivia() {
+async function cargarEmisorasPorGenero(genre) {
     statusMessage.classList.remove('hidden');
+    statusMessage.innerHTML = `<div class="spinner mx-auto mb-2"></div>Buscando emisoras...`;
     estacionesContainer.innerHTML = '';
-    
+
+    // Manejo especial si es Favoritos y no hay guardadas
+    if (genre === 'favorites') {
+        if (favorites.length === 0) {
+            statusMessage.classList.add('hidden');
+            filteredStations = [];
+            renderListas();
+            return;
+        }
+    }
+
     try {
-        const url = 'https://de1.api.radio-browser.info/json/stations/search?countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=300';
-        
+        let url = '';
+        if (genre === 'cumbia') {
+            // Cumbia, Chicha, Tropical (Bolivia, Perú, Argentina, México, Colombia)
+            url = 'https://de1.api.radio-browser.info/json/stations/search?taglist=cumbia,tropical,chicha&hidebroken=true&order=clickcount&reverse=true&limit=150';
+        } else if (genre === 'clasicos') {
+            // Clásicos 80s, 90s, Retro, Oldies
+            url = 'https://de1.api.radio-browser.info/json/stations/search?taglist=80s,90s,clasicos,retro,oldies&hidebroken=true&order=clickcount&reverse=true&limit=150';
+        } else if (genre === 'bolivia') {
+            // Todas las emisoras de Bolivia
+            url = 'https://de1.api.radio-browser.info/json/stations/search?countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=150';
+        } else if (genre === 'favorites') {
+            // Cargar favoritas por UUID
+            url = `https://de1.api.radio-browser.info/json/stations/byuuid?uuids=${favorites.join(',')}`;
+        }
+
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
-        
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
+
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
 
-        if (!response.ok) throw new Error('Error en la red');
-        
+        if (!response.ok) throw new Error('Error de conexión con la API');
+
         const data = await response.json();
-        
-        stations = data.map(station => ({
-            id: station.stationuuid,
-            name: station.name.trim(),
-            url: station.url_resolved || station.url,
-            tags: station.tags ? station.tags.split(',') : [],
-            state: station.state || 'Bolivia',
-            favicon: station.favicon || ''
-        }));
-        
+
+        stations = data.map(station => {
+            // Formatear ubicación (Ej: Lima, Peru o La Paz, Bolivia)
+            let location = [];
+            if (station.state && station.state.trim()) location.push(station.state.trim());
+            if (station.country && station.country.trim()) location.push(station.country.trim());
+            const formattedLocation = location.length > 0 ? location.join(', ') : 'Internacional';
+
+            return {
+                id: station.stationuuid,
+                name: station.name.trim(),
+                url: station.url_resolved || station.url,
+                tags: station.tags ? station.tags.split(',') : [],
+                state: formattedLocation,
+                favicon: station.favicon || ''
+            };
+        });
+
+        // Filtrar duplicados
+        stations = stations.filter((st, idx, self) => idx === self.findIndex(s => s.id === st.id));
+
         filteredStations = [...stations];
         currentPage = 1;
-        
+
         statusMessage.classList.add('hidden');
-        renderListas();
         
+        // Si teníamos un texto en el buscador, lo aplicamos
+        if (searchInput.value.trim()) {
+            filtrarEstaciones(searchInput.value.trim());
+        } else {
+            renderListas();
+        }
+
     } catch (error) {
-        console.error('Error fetching radios:', error);
-        statusMessage.innerHTML = `<span class="text-danger">⚠️ Error de conexión.</span><br><button onclick="cargarRadiosBolivia()" class="mt-2 text-primary font-semibold underline">Reintentar</button>`;
+        console.error('Error al cargar emisoras:', error);
+        statusMessage.innerHTML = `<span class="text-danger">⚠️ Error de conexión.</span><br><button onclick="cargarEmisorasPorGenero('${genre}')" class="mt-2 text-primary font-semibold underline">Reintentar</button>`;
     }
 }
 
@@ -298,9 +334,10 @@ function filtrarEstaciones(query) {
     const q = query ? query.toLowerCase() : '';
     
     filteredStations = stations.filter(s => {
-        const matchesQuery = s.name.toLowerCase().includes(q) || s.state.toLowerCase().includes(q);
-        const matchesFav = showFavoritesOnly ? favorites.includes(s.id) : true;
-        return matchesQuery && matchesFav;
+        const matchesQuery = s.name.toLowerCase().includes(q) || 
+                             s.state.toLowerCase().includes(q) || 
+                             s.tags.some(t => t.toLowerCase().includes(q));
+        return matchesQuery;
     });
     
     currentPage = 1;
@@ -327,7 +364,7 @@ function renderListas() {
     const pageItems = filteredStations.slice(start, end);
 
     if (pageItems.length === 0) {
-        estacionesContainer.innerHTML = `<div class="text-center text-secondary py-6 text-sm">No se encontraron emisoras.</div>`;
+        estacionesContainer.innerHTML = `<div class="text-center text-secondary py-6 text-sm">No se encontraron emisoras en esta categoría.</div>`;
         return;
     }
 
@@ -366,7 +403,7 @@ function crearElementoEstacion(station, originalIndex) {
 
     div.addEventListener('click', () => {
         if (isCurrent && isPlaying) {
-            abrirReproductorCompleto(); // Si ya suena, abrimos pantalla en lugar de pausar (mejor UX)
+            abrirReproductorCompleto();
         } else if (isCurrent && !isPlaying) {
             togglePlay(); 
             abrirReproductorCompleto();
@@ -392,7 +429,7 @@ function seleccionarEstacion(station, index) {
     currentIndex = index;
     
     actualizarInfoReproductor(station);
-    miniPlayer.classList.remove('hidden'); // Mostrar mini reproductor
+    miniPlayer.classList.remove('hidden');
     
     audioPlayer.src = station.url;
     audioPlayer.volume = previousVolume;
@@ -458,27 +495,23 @@ function actualizarInfoReproductor(station) {
 // ==========================================================================
 function setPlayingUI(playing) {
     if (playing) {
-        // Full Player
         fullPlayIcon.classList.add('hidden');
         fullPauseIcon.classList.remove('hidden');
         largeAvatar.classList.add('rotating');
         pulseRing1.classList.remove('hidden');
         pulseRing2.classList.remove('hidden');
 
-        // Mini Player
         miniPlayIcon.classList.add('hidden');
         miniPauseIcon.classList.remove('hidden');
         miniPlayingSubtitle.textContent = 'Reproduciendo en vivo...';
         
     } else {
-        // Full Player
         fullPlayIcon.classList.remove('hidden');
         fullPauseIcon.classList.add('hidden');
         largeAvatar.classList.remove('rotating');
         pulseRing1.classList.add('hidden');
         pulseRing2.classList.add('hidden');
 
-        // Mini Player
         miniPlayIcon.classList.remove('hidden');
         miniPauseIcon.classList.add('hidden');
         miniPlayingSubtitle.textContent = 'Pausado';
