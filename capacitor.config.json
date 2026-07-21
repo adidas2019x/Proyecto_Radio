@@ -1,5 +1,11 @@
 {
   "appId": "com.radioslapaz.app",
   "appName": "Radios de La Paz",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "androidScheme": "http",
+    "allowNavigation": [
+      "*"
+    ]
+  }
 }

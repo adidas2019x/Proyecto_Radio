@@ -236,6 +236,7 @@ function setupEventListeners() {
     audioPlayer.addEventListener('playing', () => {
         setBufferingUI(false);
         setPlayingUI(true);
+        retryCount = 0; // Conexión exitosa, reseteamos contador
     });
     audioPlayer.addEventListener('pause', () => {
         setBufferingUI(false);
@@ -243,8 +244,32 @@ function setupEventListeners() {
     });
     audioPlayer.addEventListener('error', () => {
         setBufferingUI(false);
-        setPlayingUI(false);
-        showPlayerError();
+        
+        if (!currentStation) return;
+        
+        if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            // Mostrar estado de reintento en mini y full player
+            const msg = `Reintentando (${retryCount}/${MAX_RETRIES})...`;
+            miniPlayingSubtitle.textContent = msg;
+            if (fullPlayingTitle.textContent === currentStation.name) {
+                fullPlayingSubtitle.querySelector?.('span') 
+                    ? (fullPlayingSubtitle.querySelector('span').textContent = msg)
+                    : null;
+            }
+            setBufferingUI(true);
+            
+            // Esperar 2 segundos y volver a intentar con la misma URL
+            retryTimer = setTimeout(() => {
+                console.log(`Reintento ${retryCount} para: ${currentStation.name}`);
+                iniciarReproduccion(currentStation.url);
+            }, 2000);
+        } else {
+            // Superados los reintentos, mostrar error
+            setPlayingUI(false);
+            showPlayerError();
+            retryCount = 0;
+        }
     });
 }
 
@@ -424,26 +449,42 @@ function crearElementoEstacion(station, originalIndex) {
 // ==========================================================================
 // REPRODUCCIÓN Y CONTROL
 // ==========================================================================
+let retryCount = 0;
+const MAX_RETRIES = 3;
+let retryTimer = null;
+
 function seleccionarEstacion(station, index) {
     currentStation = station;
     currentIndex = index;
+    retryCount = 0;
+    clearTimeout(retryTimer);
     
     actualizarInfoReproductor(station);
     miniPlayer.classList.remove('hidden');
     
-    audioPlayer.src = station.url;
+    iniciarReproduccion(station.url);
+    isPlaying = true;
+    setPlayingUI(true);
+    renderListas(); 
+}
+
+function iniciarReproduccion(url) {
+    // Detener reproducción anterior limpiamente
+    audioPlayer.pause();
+    audioPlayer.removeAttribute('src');
+    audioPlayer.load();
+
+    audioPlayer.src = url;
     audioPlayer.volume = previousVolume;
     
+    // load() + play() mejora compatibilidad con Android WebView y streams HTTP
+    audioPlayer.load();
     audioPlayer.play().catch(e => {
-        console.error("Auto-play prevented", e);
+        console.error("Error al iniciar reproducción:", e);
         isPlaying = false;
         setPlayingUI(false);
         setBufferingUI(false);
     });
-
-    isPlaying = true;
-    setPlayingUI(true);
-    renderListas(); 
 }
 
 function togglePlay() {
@@ -556,9 +597,20 @@ function setMuteState(muted) {
 }
 
 function showPlayerError() {
-    fullPlayingTitle.textContent = "Error al conectar";
-    miniPlayingTitle.textContent = "Error de red";
-    miniPlayingSubtitle.textContent = "Toca para intentar de nuevo";
+    fullPlayingTitle.textContent = "No se pudo conectar";
+    miniPlayingTitle.textContent = currentStation ? currentStation.name : "Error";
+    miniPlayingSubtitle.textContent = "Toca para reintentar →";
+
+    // Permitir que al tocar el mini player se reintente manualmente
+    miniPlayerInfo.onclick = () => {
+        if (currentStation) {
+            retryCount = 0;
+            iniciarReproduccion(currentStation.url);
+            isPlaying = true;
+            setPlayingUI(true);
+        }
+        abrirReproductorCompleto();
+    };
 }
 
 // Iniciar aplicación
