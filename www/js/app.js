@@ -20,18 +20,32 @@ const itemsPerPage = 10;
 // ==========================================================================
 // ELEMENTOS DEL DOM
 // ==========================================================================
+const listView = document.getElementById('list-view');
+const fullPlayerView = document.getElementById('full-player-view');
+
 const searchInput = document.getElementById('search-input');
 const clearSearchBtn = document.getElementById('clear-search');
 const toggleFavoritesBtn = document.getElementById('toggle-favorites-btn');
 const estacionesContainer = document.getElementById('estaciones-container');
 const statusMessage = document.getElementById('status-message');
 
-// Controles de Paginación
+// Mini Player
+const miniPlayer = document.getElementById('mini-player');
+const miniPlayerInfo = document.getElementById('mini-player-info');
+const miniPlayBtn = document.getElementById('mini-play-btn');
+const miniPlayIcon = document.getElementById('mini-play-icon');
+const miniPauseIcon = document.getElementById('mini-pause-icon');
+const miniPlayerBuffering = document.getElementById('mini-player-buffering');
+const miniPlayingTitle = document.getElementById('mini-playing-title');
+const miniPlayingSubtitle = document.getElementById('mini-playing-subtitle');
+
+// Paginación
 const pagePrevBtn = document.getElementById('page-prev-btn');
 const pageNextBtn = document.getElementById('page-next-btn');
 const pageIndicator = document.getElementById('page-indicator');
 
-// Reproductor
+// Reproductor Completo
+const backToListBtn = document.getElementById('back-to-list-btn');
 const fullPlayBtn = document.getElementById('full-play-btn');
 const fullPlayIcon = document.getElementById('full-play-icon');
 const fullPauseIcon = document.getElementById('full-pause-icon');
@@ -86,7 +100,7 @@ function saveFavorites() {
 }
 
 function toggleFavorite(id, e) {
-    e.stopPropagation(); // Evitar que seleccione la radio al hacer clic en la estrella
+    e.stopPropagation(); // Evitar click en la tarjeta
     const index = favorites.indexOf(id);
     if (index > -1) {
         favorites.splice(index, 1);
@@ -96,10 +110,24 @@ function toggleFavorite(id, e) {
     saveFavorites();
     
     if (showFavoritesOnly) {
-        filtrarEstaciones(searchInput.value); // Refiltrar si estamos en vista de favoritos
+        filtrarEstaciones(searchInput.value);
     } else {
-        renderListas(); // Solo actualizar UI
+        renderListas();
     }
+}
+
+// ==========================================================================
+// NAVEGACIÓN ENTRE VISTAS
+// ==========================================================================
+function abrirReproductorCompleto() {
+    if (!currentStation) return;
+    listView.classList.add('hidden');
+    fullPlayerView.classList.remove('hidden');
+}
+
+function cerrarReproductorCompleto() {
+    fullPlayerView.classList.add('hidden');
+    listView.classList.remove('hidden');
 }
 
 // ==========================================================================
@@ -151,7 +179,15 @@ function setupEventListeners() {
         }
     });
 
+    // --- Mini Reproductor ---
+    miniPlayerInfo.addEventListener('click', abrirReproductorCompleto);
+    miniPlayBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        togglePlay();
+    });
+
     // --- Reproductor Completo ---
+    backToListBtn.addEventListener('click', cerrarReproductorCompleto);
     fullPlayBtn.addEventListener('click', togglePlay);
     prevStationBtn.addEventListener('click', reproducirAnterior);
     nextStationBtn.addEventListener('click', reproducirSiguiente);
@@ -178,6 +214,13 @@ function setupEventListeners() {
             audioPlayer.volume = 0;
             fullVolumeSlider.value = 0;
             setMuteState(true);
+        }
+    });
+
+    // --- Eventos de Hardware ---
+    document.addEventListener('backbutton', () => {
+        if (!fullPlayerView.classList.contains('hidden')) {
+            cerrarReproductorCompleto();
         }
     });
 
@@ -209,7 +252,7 @@ async function cargarRadiosLaPaz() {
         const url = 'https://de1.api.radio-browser.info/json/stations/search?state=La+Paz&countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=100';
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos de timeout
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
         
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -218,7 +261,6 @@ async function cargarRadiosLaPaz() {
         
         const data = await response.json();
         
-        // Limpiamos los datos
         stations = data.map(station => ({
             id: station.stationuuid,
             name: station.name.trim(),
@@ -249,7 +291,7 @@ function filtrarEstaciones(query) {
         return matchesQuery && matchesFav;
     });
     
-    currentPage = 1; // Reseteamos a la página 1 al buscar
+    currentPage = 1;
     renderListas();
 }
 
@@ -261,16 +303,13 @@ function renderListas() {
     
     const maxPages = Math.ceil(filteredStations.length / itemsPerPage) || 1;
     
-    // Asegurarse de que la página actual no se salga del rango tras buscar
     if (currentPage > maxPages) currentPage = maxPages;
     if (currentPage < 1) currentPage = 1;
 
-    // Actualizar UI de Paginación
     pageIndicator.textContent = `Pág ${currentPage}/${maxPages}`;
     pagePrevBtn.disabled = currentPage === 1;
     pageNextBtn.disabled = currentPage === maxPages;
 
-    // Obtener los items de la página actual
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const pageItems = filteredStations.slice(start, end);
@@ -280,7 +319,6 @@ function renderListas() {
         return;
     }
 
-    // Renderizar
     pageItems.forEach(station => {
         const originalIndex = stations.findIndex(s => s.id === station.id);
         const el = crearElementoEstacion(station, originalIndex);
@@ -295,7 +333,6 @@ function crearElementoEstacion(station, originalIndex) {
     const div = document.createElement('div');
     div.className = `station-card ${isCurrent ? 'active' : ''}`;
     
-    // Avatar inicial
     let inicial = station.name.charAt(0).toUpperCase();
     if (!inicial.match(/[A-Z]/i)) inicial = '🎵';
 
@@ -315,18 +352,18 @@ function crearElementoEstacion(station, originalIndex) {
         </div>
     `;
 
-    // Evento de reproducir al dar clic en la tarjeta
     div.addEventListener('click', () => {
         if (isCurrent && isPlaying) {
-            togglePlay(); 
+            abrirReproductorCompleto(); // Si ya suena, abrimos pantalla en lugar de pausar (mejor UX)
         } else if (isCurrent && !isPlaying) {
             togglePlay(); 
+            abrirReproductorCompleto();
         } else {
             seleccionarEstacion(station, originalIndex);
+            abrirReproductorCompleto();
         }
     });
     
-    // Evento del botón de favorito
     const favBtn = div.querySelector('.fav-btn');
     favBtn.addEventListener('click', (e) => {
         toggleFavorite(station.id, e);
@@ -343,6 +380,7 @@ function seleccionarEstacion(station, index) {
     currentIndex = index;
     
     actualizarInfoReproductor(station);
+    miniPlayer.classList.remove('hidden'); // Mostrar mini reproductor
     
     audioPlayer.src = station.url;
     audioPlayer.volume = previousVolume;
@@ -356,7 +394,7 @@ function seleccionarEstacion(station, index) {
 
     isPlaying = true;
     setPlayingUI(true);
-    renderListas(); // Para actualizar clases 'active'
+    renderListas(); 
 }
 
 function togglePlay() {
@@ -391,7 +429,10 @@ function actualizarInfoReproductor(station) {
     let inicial = station.name.charAt(0).toUpperCase();
     if (!inicial.match(/[A-Z]/i)) inicial = '🎵';
 
-    // Reproductor Completo Fijo
+    // Mini Player
+    miniPlayingTitle.textContent = station.name;
+    
+    // Full Player
     fullPlayingTitle.textContent = station.name;
     fullPlayingSubtitle.innerHTML = `
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
@@ -405,19 +446,30 @@ function actualizarInfoReproductor(station) {
 // ==========================================================================
 function setPlayingUI(playing) {
     if (playing) {
+        // Full Player
         fullPlayIcon.classList.add('hidden');
         fullPauseIcon.classList.remove('hidden');
-        
         largeAvatar.classList.add('rotating');
         pulseRing1.classList.remove('hidden');
         pulseRing2.classList.remove('hidden');
+
+        // Mini Player
+        miniPlayIcon.classList.add('hidden');
+        miniPauseIcon.classList.remove('hidden');
+        miniPlayingSubtitle.textContent = 'Reproduciendo en vivo...';
+        
     } else {
+        // Full Player
         fullPlayIcon.classList.remove('hidden');
         fullPauseIcon.classList.add('hidden');
-        
         largeAvatar.classList.remove('rotating');
         pulseRing1.classList.add('hidden');
         pulseRing2.classList.add('hidden');
+
+        // Mini Player
+        miniPlayIcon.classList.remove('hidden');
+        miniPauseIcon.classList.add('hidden');
+        miniPlayingSubtitle.textContent = 'Pausado';
     }
 }
 
@@ -426,12 +478,23 @@ function setBufferingUI(isBuffering) {
         fullPlayIcon.classList.add('hidden');
         fullPauseIcon.classList.add('hidden');
         fullPlayerBuffering.classList.remove('hidden');
+
+        miniPlayIcon.classList.add('hidden');
+        miniPauseIcon.classList.add('hidden');
+        miniPlayerBuffering.classList.remove('hidden');
+        miniPlayingSubtitle.textContent = 'Conectando...';
     } else {
         fullPlayerBuffering.classList.add('hidden');
+        miniPlayerBuffering.classList.add('hidden');
+        
         if (isPlaying) {
             fullPauseIcon.classList.remove('hidden');
+            miniPauseIcon.classList.remove('hidden');
+            miniPlayingSubtitle.textContent = 'Reproduciendo en vivo...';
         } else {
             fullPlayIcon.classList.remove('hidden');
+            miniPlayIcon.classList.remove('hidden');
+            miniPlayingSubtitle.textContent = 'Pausado';
         }
     }
 }
@@ -448,8 +511,9 @@ function setMuteState(muted) {
 }
 
 function showPlayerError() {
-    fullPlayingTitle.textContent = "Error al reproducir";
-    fullPlayingSubtitle.textContent = "Verifica tu conexión";
+    fullPlayingTitle.textContent = "Error al conectar";
+    miniPlayingTitle.textContent = "Error de red";
+    miniPlayingSubtitle.textContent = "Toca para intentar de nuevo";
 }
 
 // Iniciar aplicación

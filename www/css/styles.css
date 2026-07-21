@@ -43,7 +43,10 @@ body {
 .bg-light { background-color: var(--bg-light); }
 .bg-light-translucent { background-color: rgba(241, 245, 249, 0.9); backdrop-filter: blur(8px); }
 
-/* Utilidades para esconder la scrollbar nativa pero permitir scroll */
+/* Ocultar elementos */
+.hidden { display: none !important; }
+
+/* Scroll invisible */
 .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -64,7 +67,7 @@ body {
     position: absolute;
     border-radius: 50%;
     filter: blur(100px);
-    opacity: 0.1; /* Muy sutil en light mode */
+    opacity: 0.1;
 }
 .glow-1 {
     width: 300px; height: 300px;
@@ -139,12 +142,12 @@ body {
     display: flex; align-items: center; gap: 12px; flex-grow: 1; overflow: hidden;
 }
 .station-avatar {
-    width: 38px; height: 38px;
-    border-radius: 10px;
+    width: 44px; height: 44px;
+    border-radius: 12px;
     background: rgba(79, 70, 229, 0.1);
     color: var(--primary);
     display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: 1rem;
+    font-weight: 700; font-size: 1.1rem;
     flex-shrink: 0;
 }
 .station-card.active .station-avatar {
@@ -152,12 +155,12 @@ body {
     color: #fff;
 }
 .station-name {
-    font-weight: 600; font-size: 0.9rem;
+    font-weight: 600; font-size: 0.95rem;
     color: var(--text-dark);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .station-state {
-    font-size: 0.7rem; color: var(--text-secondary);
+    font-size: 0.75rem; color: var(--text-secondary);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -177,10 +180,30 @@ body {
 }
 .page-btn:active { transform: scale(0.95); }
 
-/* ─── Reproductor Inferior (Mitad Fija) ─── */
+/* ─── Mini Player Flotante ─── */
+.player-panel {
+    transition: transform 0.3s ease;
+}
+.player-avatar.mini {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: rgba(79, 70, 229, 0.1);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+}
+.mini-player-play-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff; border: none;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 10px var(--primary-glow);
+}
+.mini-player-play-btn:active { transform: scale(0.9); }
+
+/* ─── Reproductor Pantalla Completa ─── */
 .large-avatar-container {
     position: relative;
-    width: 140px; height: 140px;
+    width: 180px; height: 180px;
     display: flex; align-items: center; justify-content: center;
 }
 .large-avatar {
@@ -188,7 +211,7 @@ body {
     border-radius: 50%;
     background: var(--bg-card);
     border: 2px dashed rgba(79, 70, 229, 0.3);
-    box-shadow: 0 8px 25px rgba(0,0,0,.08);
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
     display: flex; align-items: center; justify-content: center;
     position: relative; z-index: 2;
     transition: all .5s ease;
@@ -199,7 +222,6 @@ body {
     to   { transform: rotate(360deg); }
 }
 
-/* Anillos de pulso */
 .pulse-ring {
     position: absolute; inset: 0;
     border: 2px solid rgba(79, 70, 229, 0.2);
@@ -213,9 +235,8 @@ body {
     100% { transform: scale(1.5); opacity: 0; }
 }
 
-/* Botones de control */
 .control-btn {
-    width: 48px; height: 48px;
+    width: 52px; height: 52px;
     border-radius: 50%;
     background: var(--bg-card);
     border: 1px solid var(--light-border);
@@ -226,16 +247,15 @@ body {
 .control-btn:active { transform: scale(.92); }
 
 .large-play-btn {
-    width: 64px; height: 64px;
+    width: 72px; height: 72px;
     border-radius: 50%;
     background: var(--primary);
     color: #fff; border: none;
-    box-shadow: 0 6px 18px var(--primary-glow);
+    box-shadow: 0 8px 24px var(--primary-glow);
     display: flex; align-items: center; justify-content: center;
 }
 .large-play-btn:active { transform: scale(.92); }
 
-/* Volumen */
 .volume-btn {
     background: transparent; border: none;
     color: var(--text-secondary);
@@ -249,20 +269,20 @@ body {
 }
 .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none; appearance: none;
-    width: 14px; height: 14px;
+    width: 16px; height: 16px;
     border-radius: 50%;
     background: var(--primary);
     box-shadow: 0 2px 5px rgba(0,0,0,.2);
 }
 
-/* Spinners */
-.spinner {
-    border: 3px solid rgba(79, 70, 229, 0.2);
-    border-top-color: var(--primary);
+.spinner, .spinner-small {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
     border-radius: 50%;
     animation: spin .8s linear infinite;
-    width: 20px; height: 20px;
 }
+.spinner { width: 20px; height: 20px; }
+.spinner-small { width: 14px; height: 14px; border-width: 2px; }
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
