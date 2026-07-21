@@ -154,6 +154,11 @@ body {
     background: var(--primary);
     color: #fff;
 }
+.station-details {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
 .station-name {
     font-weight: 600; font-size: 0.95rem;
     color: var(--text-dark);

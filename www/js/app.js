@@ -141,6 +141,18 @@ function setupEventListeners() {
         filtrarEstaciones(q);
     });
 
+    searchInput.addEventListener('focus', () => {
+        // Ocultar mini reproductor mientras se escribe para dar espacio al teclado
+        miniPlayer.classList.add('hidden');
+    });
+
+    searchInput.addEventListener('blur', () => {
+        // Restaurar mini reproductor al salir del campo de búsqueda si hay emisora
+        if (currentStation) {
+            miniPlayer.classList.remove('hidden');
+        }
+    });
+
     clearSearchBtn.addEventListener('click', () => {
         searchInput.value = '';
         clearSearchBtn.classList.add('hidden');
