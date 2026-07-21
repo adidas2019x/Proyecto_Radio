@@ -62,6 +62,11 @@ const largeAvatar = document.getElementById('large-avatar');
 const pulseRing1 = document.getElementById('pulse-ring-1');
 const pulseRing2 = document.getElementById('pulse-ring-2');
 
+// Botón Favorito en Reproductor Completo
+const fullFavBtn = document.getElementById('full-fav-btn');
+const fullFavIconEmpty = document.getElementById('full-fav-icon-empty');
+const fullFavIconFilled = document.getElementById('full-fav-icon-filled');
+
 const fullVolumeSlider = document.getElementById('full-volume-slider');
 const fullVolumeMuteBtn = document.getElementById('full-volume-mute-btn');
 const fullVolHighIcon = document.getElementById('full-vol-high-icon');
@@ -199,7 +204,22 @@ function setupEventListeners() {
     prevStationBtn.addEventListener('click', reproducirAnterior);
     nextStationBtn.addEventListener('click', reproducirSiguiente);
 
-    // --- Volumen ---
+    // --- Favorito desde Reproductor Completo ---
+    fullFavBtn.addEventListener('click', () => {
+        if (!currentStation) return;
+        const id = currentStation.id;
+        const index = favorites.indexOf(id);
+        if (index > -1) {
+            favorites.splice(index, 1);
+        } else {
+            favorites.push(id);
+        }
+        saveFavorites();
+        actualizarIconoFavorito(currentStation.id);
+        renderListas(); // Refrescar lista para que la estrella en las tarjetas se sincronice
+    });
+
+
     fullVolumeSlider.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         audioPlayer.volume = val;
@@ -529,6 +549,20 @@ function actualizarInfoReproductor(station) {
         <span>${station.state}</span>
     `;
     largeAvatarLetter.textContent = inicial;
+    
+    // Sincronizar icono de estrella
+    actualizarIconoFavorito(station.id);
+}
+
+function actualizarIconoFavorito(stationId) {
+    const isFav = favorites.includes(stationId);
+    if (isFav) {
+        fullFavIconEmpty.classList.add('hidden');
+        fullFavIconFilled.classList.remove('hidden');
+    } else {
+        fullFavIconEmpty.classList.remove('hidden');
+        fullFavIconFilled.classList.add('hidden');
+    }
 }
 
 // ==========================================================================

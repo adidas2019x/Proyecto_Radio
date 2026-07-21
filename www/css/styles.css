@@ -228,6 +228,18 @@ body {
 }
 .mini-player-play-btn:active { transform: scale(0.9); }
 
+/* ─── Botón Favorito en Reproductor Completo ─── */
+.full-fav-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: transform .2s ease;
+}
+.full-fav-btn:active { transform: scale(0.8); }
+
 /* ─── Reproductor Pantalla Completa ─── */
 .large-avatar-container {
     position: relative;

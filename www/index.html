@@ -31,7 +31,7 @@
             <header class="text-center mb-2 shrink-0">
                 <div class="flex items-center justify-center gap-1.5 mb-0.5">
                     <h1 class="text-2xl font-bold tracking-tight font-outfit text-primary">Radios En Vivo</h1>
-                    <span class="bg-indigo-100 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">v2.1</span>
+                    <span class="bg-indigo-100 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">v2.2</span>
                 </div>
                 <p class="text-secondary text-[11px]">Cumbia, Clásicos 80s/90s y Latam</p>
             </header>
@@ -147,9 +147,16 @@
                 <div id="pulse-ring-2" class="pulse-ring hidden"></div>
             </div>
 
-            <!-- Título y Subtítulo -->
+            <!-- Título, Subtítulo y Botón Favorito -->
             <div class="text-center w-full px-2">
-                <h2 id="full-playing-title" class="text-lg sm:text-2xl font-bold font-outfit tracking-tight text-dark leading-tight mb-1">Ninguna estación</h2>
+                <div class="flex items-center justify-center gap-3 mb-1">
+                    <h2 id="full-playing-title" class="text-lg sm:text-2xl font-bold font-outfit tracking-tight text-dark leading-tight">Ninguna estación</h2>
+                    <!-- Botón Favorito en Reproductor Completo -->
+                    <button id="full-fav-btn" class="full-fav-btn shrink-0" aria-label="Marcar como favorito">
+                        <svg id="full-fav-icon-empty" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-secondary"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <svg id="full-fav-icon-filled" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hidden"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </button>
+                </div>
                 <p id="full-playing-subtitle" class="text-xs sm:text-sm text-secondary font-medium tracking-wide flex items-center justify-center gap-1">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                     <span id="full-playing-state">-</span>
