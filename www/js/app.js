@@ -315,31 +315,93 @@ async function cargarEmisorasPorGenero(genre) {
         let allData = [];
         
         if (genre === 'cumbia') {
-            // Buscar "cumbia" en cada país latinoamericano para evitar resultados de Europa
-            const paises = ['BO', 'PE', 'AR', 'MX', 'CO', 'EC', 'CL', 'PY', 'UY', 'VE'];
-            const fetchPromises = paises.map(cc => 
-                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=cumbia&countrycode=${cc}&hidebroken=true&order=clickcount&reverse=true&limit=30`)
-                    .then(r => r.ok ? r.json() : [])
-                    .catch(() => [])
-            );
+            // Cumbia Argentina, Merengue (estilo Tú eres ajena), Bachata, Salsa, Tropical y Chicha
+            const arTags = ['cumbia', 'tropical', 'villera', 'santafesina', 'cuarteto'];
+            const tropicalTags = ['merengue', 'bachata', 'salsa', 'tropical', 'bailable'];
+            const latamCountries = ['BO', 'PE', 'CO', 'DO', 'MX', 'UY', 'CL', 'PY'];
+            
+            const fetchPromises = [];
+            
+            // 1. Cargas principales de Cumbia Argentina & Cuarteto
+            arTags.forEach(tag => {
+                fetchPromises.push(
+                    fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&countrycode=AR&hidebroken=true&order=clickcount&reverse=true&limit=35`)
+                        .then(r => r.ok ? r.json() : [])
+                        .catch(() => [])
+                );
+            });
+            
+            // 2. Cargas de Merengue/Bachata/Tropical (Éxitos como Eddy Herrera, Wilfrido Vargas, etc.)
+            tropicalTags.forEach(tag => {
+                fetchPromises.push(
+                    fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&language=spanish&hidebroken=true&order=clickcount&reverse=true&limit=25`)
+                        .then(r => r.ok ? r.json() : [])
+                        .catch(() => [])
+                );
+            });
+            
+            // 3. Cargas de Bolivia, Perú, Colombia y República Dominicana (cuna del Merengue)
+            latamCountries.forEach(cc => {
+                ['cumbia', 'tropical', 'merengue'].forEach(tag => {
+                    fetchPromises.push(
+                        fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&countrycode=${cc}&hidebroken=true&order=clickcount&reverse=true&limit=15`)
+                            .then(r => r.ok ? r.json() : [])
+                            .catch(() => [])
+                    );
+                });
+            });
+            
             const results = await Promise.all(fetchPromises);
-            allData = results.flat();
+            const rawData = results.flat();
+            
+            // Palabras a excluir (estilos con trompetas de banda/norteño/ska/mariachi/corridos)
+            const excludeWords = ['banda', 'norteño', 'norteno', 'mariachi', 'ranchera', 'corridos', 'grupera', 'ska', 'trompeta', 'brass'];
+            
+            const filtered = rawData.filter(st => {
+                const searchStr = `${st.name || ''} ${st.tags || ''}`.toLowerCase();
+                return !excludeWords.some(word => searchStr.includes(word));
+            });
+            
+            // Función para determinar jerarquía por país (1: Bolivia, 2: Argentina, 3: Perú, 4: Colombia, 5: Otros)
+            const getCountryPriority = (st) => {
+                const cc = (st.countrycode || '').toUpperCase();
+                const cName = (st.country || '').toLowerCase();
+                
+                if (cc === 'BO' || cName.includes('bolivia')) return 1;
+                if (cc === 'AR' || cName.includes('argentina')) return 2;
+                if (cc === 'PE' || cName.includes('peru') || cName.includes('perú')) return 3;
+                if (cc === 'CO' || cName.includes('colombia')) return 4;
+                return 5;
+            };
+
+            // Ordenar por prioridad de país y luego por popularidad
+            allData = filtered.sort((a, b) => {
+                const prioA = getCountryPriority(a);
+                const prioB = getCountryPriority(b);
+                if (prioA !== prioB) return prioA - prioB;
+                return (b.clickcount || 0) - (a.clickcount || 0);
+            });
             
         } else if (genre === 'clasicos') {
-            // Buscar clasicos/80s/90s en países de habla hispana + global
-            const tags = ['80s', '90s', 'oldies', 'retro'];
-            const fetchPromises = tags.map(tag =>
-                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&language=spanish&hidebroken=true&order=clickcount&reverse=true&limit=40`)
+            // Buscar Clásicos, Disco, Retro, 70s, 80s, 90s y Oldies
+            const tags = ['disco', 'clasicos', 'retro', '80s', '90s', '70s', 'oldies'];
+            
+            // Promesas en español/Latinoamérica
+            const spanishPromises = tags.map(tag =>
+                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&language=spanish&hidebroken=true&order=clickcount&reverse=true&limit=25`)
                     .then(r => r.ok ? r.json() : [])
                     .catch(() => [])
             );
-            // También traer algunos globales en inglés (80s/90s hits)
-            const globalPromises = ['80s', '90s'].map(tag =>
-                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&hidebroken=true&order=clickcount&reverse=true&limit=30`)
+            
+            // Promesas globales para géneros específicos como 'disco', 'retro', '80s'
+            const globalTags = ['disco', '80s', '70s', 'retro'];
+            const globalPromises = globalTags.map(tag =>
+                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&hidebroken=true&order=clickcount&reverse=true&limit=25`)
                     .then(r => r.ok ? r.json() : [])
                     .catch(() => [])
             );
-            const results = await Promise.all([...fetchPromises, ...globalPromises]);
+            
+            const results = await Promise.all([...spanishPromises, ...globalPromises]);
             allData = results.flat();
             
         } else if (genre === 'bolivia') {

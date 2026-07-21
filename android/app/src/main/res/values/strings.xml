@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Radios de La Paz</string>
-    <string name="title_activity_main">Radios de La Paz</string>
+    <string name="app_name">RADIO AS</string>
+    <string name="title_activity_main">RADIO AS</string>
     <string name="package_name">com.radioslapaz.app</string>
     <string name="custom_url_scheme">com.radioslapaz.app</string>
 </resources>
