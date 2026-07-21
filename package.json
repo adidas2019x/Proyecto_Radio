@@ -1,6 +1,6 @@
 {
   "name": "radios-de-la-paz",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Aplicación de radio en vivo de Bolivia",
   "main": "www/index.html",
   "scripts": {

@@ -312,30 +312,48 @@ async function cargarEmisorasPorGenero(genre) {
     }
 
     try {
-        let url = '';
+        let allData = [];
+        
         if (genre === 'cumbia') {
-            // Cumbia, Chicha, Tropical (Bolivia, Perú, Argentina, México, Colombia)
-            url = 'https://de1.api.radio-browser.info/json/stations/search?taglist=cumbia,tropical,chicha&hidebroken=true&order=clickcount&reverse=true&limit=150';
+            // Buscar "cumbia" en cada país latinoamericano para evitar resultados de Europa
+            const paises = ['BO', 'PE', 'AR', 'MX', 'CO', 'EC', 'CL', 'PY', 'UY', 'VE'];
+            const fetchPromises = paises.map(cc => 
+                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=cumbia&countrycode=${cc}&hidebroken=true&order=clickcount&reverse=true&limit=30`)
+                    .then(r => r.ok ? r.json() : [])
+                    .catch(() => [])
+            );
+            const results = await Promise.all(fetchPromises);
+            allData = results.flat();
+            
         } else if (genre === 'clasicos') {
-            // Clásicos 80s, 90s, Retro, Oldies
-            url = 'https://de1.api.radio-browser.info/json/stations/search?taglist=80s,90s,clasicos,retro,oldies&hidebroken=true&order=clickcount&reverse=true&limit=150';
+            // Buscar clasicos/80s/90s en países de habla hispana + global
+            const tags = ['80s', '90s', 'oldies', 'retro'];
+            const fetchPromises = tags.map(tag =>
+                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&language=spanish&hidebroken=true&order=clickcount&reverse=true&limit=40`)
+                    .then(r => r.ok ? r.json() : [])
+                    .catch(() => [])
+            );
+            // También traer algunos globales en inglés (80s/90s hits)
+            const globalPromises = ['80s', '90s'].map(tag =>
+                fetch(`https://de1.api.radio-browser.info/json/stations/search?tag=${tag}&hidebroken=true&order=clickcount&reverse=true&limit=30`)
+                    .then(r => r.ok ? r.json() : [])
+                    .catch(() => [])
+            );
+            const results = await Promise.all([...fetchPromises, ...globalPromises]);
+            allData = results.flat();
+            
         } else if (genre === 'bolivia') {
-            // Todas las emisoras de Bolivia
-            url = 'https://de1.api.radio-browser.info/json/stations/search?countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=150';
+            const response = await fetch('https://de1.api.radio-browser.info/json/stations/search?countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=150');
+            if (!response.ok) throw new Error('Error de conexión');
+            allData = await response.json();
+            
         } else if (genre === 'favorites') {
-            // Cargar favoritas por UUID
-            url = `https://de1.api.radio-browser.info/json/stations/byuuid?uuids=${favorites.join(',')}`;
+            const response = await fetch(`https://de1.api.radio-browser.info/json/stations/byuuid?uuids=${favorites.join(',')}`);
+            if (!response.ok) throw new Error('Error de conexión');
+            allData = await response.json();
         }
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) throw new Error('Error de conexión con la API');
-
-        const data = await response.json();
+        const data = allData;
 
         stations = data.map(station => {
             // Formatear ubicación (Ej: Lima, Peru o La Paz, Bolivia)
