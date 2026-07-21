@@ -25,23 +25,23 @@
     <div id="list-view" class="w-full flex-grow flex flex-col z-10">
         
         <!-- Contenido principal -->
-        <main class="flex-grow w-full max-w-lg mx-auto px-4 pt-6 pb-28 flex flex-col relative">
+        <main class="flex-grow w-full max-w-lg mx-auto px-3 pt-3 pb-24 flex flex-col relative">
             
-            <!-- Cabecera -->
-            <header class="text-center mb-4 shrink-0">
-                <div class="flex items-center justify-center gap-2 mb-1">
-                    <h1 class="text-3xl font-bold tracking-tight font-outfit text-primary">Radios En Vivo</h1>
-                    <span class="bg-indigo-100 text-primary text-xs font-bold px-2 py-0.5 rounded-full font-mono">v2.1</span>
+            <!-- Cabecera Compacta -->
+            <header class="text-center mb-2 shrink-0">
+                <div class="flex items-center justify-center gap-1.5 mb-0.5">
+                    <h1 class="text-2xl font-bold tracking-tight font-outfit text-primary">Radios En Vivo</h1>
+                    <span class="bg-indigo-100 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">v2.1</span>
                 </div>
-                <p class="text-secondary text-xs">Cumbia, Clásicos 80s/90s, Bolivia y Latam</p>
+                <p class="text-secondary text-[11px]">Cumbia, Clásicos 80s/90s y Latam</p>
             </header>
 
             <!-- Barra de Búsqueda y Filtros -->
-            <div class="shrink-0 mb-4 flex flex-col gap-3">
+            <div class="shrink-0 mb-3 flex flex-col gap-2">
                 <div class="search-box">
                     <div class="search-wrapper">
-                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" id="search-input" placeholder="Buscar emisora, ciudad o género..." autocomplete="off">
+                        <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <input type="text" id="search-input" placeholder="Buscar emisora o ciudad..." autocomplete="off">
                         <button id="clear-search" class="clear-btn hidden">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
@@ -49,11 +49,11 @@
                 </div>
                 
                 <!-- Cápsulas de Filtros de Género -->
-                <div id="genre-chips-container" class="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-1 pt-1 -mx-4 px-4 shrink-0">
+                <div id="genre-chips-container" class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar pb-0.5 pt-0.5 -mx-3 px-3 shrink-0">
                     <button class="genre-chip active" data-genre="cumbia">💃 Cumbia & Tropical</button>
                     <button class="genre-chip" data-genre="clasicos">🎸 Clásicos 80s/90s</button>
                     <button class="genre-chip" data-genre="bolivia">🇧🇴 Bolivia</button>
-                    <button class="genre-chip" data-genre="favorites">⭐ Mis Favoritos</button>
+                    <button class="genre-chip" data-genre="favorites">⭐ Favoritos</button>
                 </div>
             </div>
 
@@ -125,66 +125,66 @@
         </div>
 
         <!-- Cabecera del Reproductor -->
-        <header class="w-full max-w-lg mx-auto px-6 pt-10 flex items-center justify-between z-10">
+        <header class="w-full max-w-lg mx-auto px-4 pt-4 sm:pt-10 flex items-center justify-between z-10 shrink-0">
             <!-- Botón REGRESAR -->
-            <button id="back-to-list-btn" class="back-btn flex items-center gap-1.5 text-secondary hover:text-dark transition py-2 px-3 rounded-xl bg-white border border-light-border font-outfit text-xs font-semibold shadow-sm" aria-label="Regresar a la lista">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+            <button id="back-to-list-btn" class="back-btn flex items-center gap-1.5 text-secondary hover:text-dark transition py-1.5 px-3 rounded-xl bg-white border border-light-border font-outfit text-xs font-semibold shadow-sm" aria-label="Regresar a la lista">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
                 REGRESAR
             </button>
-            <span class="text-xs font-bold tracking-widest text-primary font-outfit">REPRODUCIENDO</span>
-            <div class="w-24"></div> <!-- Spacer -->
+            <span class="text-[10px] sm:text-xs font-bold tracking-widest text-primary font-outfit">REPRODUCIENDO</span>
+            <div class="w-20"></div> <!-- Spacer -->
         </header>
 
         <!-- Contenido Central -->
-        <main class="w-full max-w-lg mx-auto px-6 flex flex-col items-center justify-center gap-10 z-10 flex-grow">
+        <main class="w-full max-w-lg mx-auto px-4 flex flex-col items-center justify-center gap-4 sm:gap-8 z-10 flex-grow py-2">
             
             <!-- Avatar Giratorio -->
             <div class="large-avatar-container">
                 <div id="large-avatar" class="large-avatar flex items-center justify-center">
-                    <span id="large-avatar-letter" class="font-outfit text-6xl font-extrabold text-primary">-</span>
+                    <span id="large-avatar-letter" class="font-outfit text-5xl sm:text-6xl font-extrabold text-primary">-</span>
                 </div>
                 <div id="pulse-ring-1" class="pulse-ring hidden"></div>
                 <div id="pulse-ring-2" class="pulse-ring hidden"></div>
             </div>
 
             <!-- Título y Subtítulo -->
-            <div class="text-center w-full px-4">
-                <h2 id="full-playing-title" class="text-2xl font-bold font-outfit tracking-tight text-dark leading-tight mb-2">Ninguna estación</h2>
-                <p id="full-playing-subtitle" class="text-sm text-secondary font-medium tracking-wide flex items-center justify-center gap-1.5">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            <div class="text-center w-full px-2">
+                <h2 id="full-playing-title" class="text-lg sm:text-2xl font-bold font-outfit tracking-tight text-dark leading-tight mb-1">Ninguna estación</h2>
+                <p id="full-playing-subtitle" class="text-xs sm:text-sm text-secondary font-medium tracking-wide flex items-center justify-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
                     <span id="full-playing-state">-</span>
                 </p>
             </div>
         </main>
 
         <!-- Controles Inferiores -->
-        <footer class="w-full max-w-lg mx-auto px-6 pb-14 pt-4 flex flex-col gap-8 z-10">
+        <footer class="w-full max-w-lg mx-auto px-4 pb-6 sm:pb-12 pt-2 flex flex-col gap-4 sm:gap-6 z-10 shrink-0">
             
             <!-- Botones Principales -->
-            <div class="flex items-center justify-center gap-8">
+            <div class="flex items-center justify-center gap-6 sm:gap-8">
                 <!-- Botón ANTERIOR -->
                 <button id="prev-station-btn" class="control-btn" aria-label="Anterior">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"></polygon><rect x="5" y="4" width="2" height="16"></rect></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"></polygon><rect x="5" y="4" width="2" height="16"></rect></svg>
                 </button>
 
                 <!-- Botón PLAY/PAUSE -->
                 <button id="full-play-btn" class="large-play-btn" aria-label="Reproducir/Pausar">
-                    <svg id="full-play-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                    <svg id="full-pause-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-                    <div id="full-player-buffering" class="spinner hidden" style="width: 28px; height: 28px;"></div>
+                    <svg id="full-play-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg id="full-pause-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+                    <div id="full-player-buffering" class="spinner hidden" style="width: 24px; height: 24px;"></div>
                 </button>
 
                 <!-- Botón SIGUIENTE -->
                 <button id="next-station-btn" class="control-btn" aria-label="Siguiente">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"></polygon><rect x="17" y="4" width="2" height="16"></rect></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"></polygon><rect x="17" y="4" width="2" height="16"></rect></svg>
                 </button>
             </div>
 
             <!-- Control de Volumen -->
-            <div class="flex items-center gap-4 bg-white border border-light-border rounded-2xl px-5 py-4 shadow-sm mx-auto w-full max-w-sm">
+            <div class="flex items-center gap-3 bg-white border border-light-border rounded-xl px-4 py-2.5 shadow-sm mx-auto w-full max-w-xs">
                 <button id="full-volume-mute-btn" class="volume-btn text-secondary" aria-label="Mutear volumen">
-                    <svg id="full-vol-high-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-                    <svg id="full-vol-mute-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+                    <svg id="full-vol-high-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    <svg id="full-vol-mute-icon" class="hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
                 </button>
                 <input type="range" id="full-volume-slider" class="volume-slider flex-grow" min="0" max="1" step="0.05" value="0.8" aria-label="Volumen">
             </div>
