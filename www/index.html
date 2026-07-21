@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Radios de La Paz</title>
+    <title>Radios</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,15 +27,23 @@
             <h1 class="text-2xl font-bold tracking-tight font-outfit text-primary mb-1">Radios de La Paz</h1>
         </header>
 
-        <!-- Barra de Búsqueda -->
-        <div class="search-box shrink-0 mb-3">
-            <div class="search-wrapper">
-                <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <input type="text" id="search-input" placeholder="Buscar emisora o ciudad..." autocomplete="off">
-                <button id="clear-search" class="clear-btn hidden">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
+        <!-- Barra de Búsqueda y Filtros -->
+        <div class="shrink-0 mb-3 flex flex-col gap-2">
+            <div class="search-box">
+                <div class="search-wrapper">
+                    <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="search-input" placeholder="Buscar emisora o ciudad..." autocomplete="off">
+                    <button id="clear-search" class="clear-btn hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
             </div>
+            
+            <!-- Botón Filtro Favoritos -->
+            <button id="toggle-favorites-btn" class="flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg border border-light-border bg-white text-sm font-semibold text-secondary transition-all w-fit mx-auto shadow-sm">
+                <svg class="fav-icon-outline" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                Ver Mis Favoritos
+            </button>
         </div>
 
         <!-- Área de la Lista con Scroll Independiente -->

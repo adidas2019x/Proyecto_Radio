@@ -9,6 +9,10 @@ let isPlaying = false;
 let isMuted = false;
 let previousVolume = 0.8;
 
+// Favoritos y Filtros
+let favorites = [];
+let showFavoritesOnly = false;
+
 // Paginación
 let currentPage = 1;
 const itemsPerPage = 10;
@@ -18,6 +22,7 @@ const itemsPerPage = 10;
 // ==========================================================================
 const searchInput = document.getElementById('search-input');
 const clearSearchBtn = document.getElementById('clear-search');
+const toggleFavoritesBtn = document.getElementById('toggle-favorites-btn');
 const estacionesContainer = document.getElementById('estaciones-container');
 const statusMessage = document.getElementById('status-message');
 
@@ -57,8 +62,44 @@ const audioPlayer = document.getElementById('native-audio');
 // INICIALIZACIÓN
 // ==========================================================================
 function init() {
+    loadFavorites();
     setupEventListeners();
     cargarRadiosLaPaz();
+}
+
+// ==========================================================================
+// FAVORITOS LOCAL STORAGE
+// ==========================================================================
+function loadFavorites() {
+    try {
+        const saved = localStorage.getItem('radio_lapaz_favorites');
+        favorites = saved ? JSON.parse(saved) : [];
+    } catch (e) {
+        favorites = [];
+    }
+}
+
+function saveFavorites() {
+    try {
+        localStorage.setItem('radio_lapaz_favorites', JSON.stringify(favorites));
+    } catch (e) {}
+}
+
+function toggleFavorite(id, e) {
+    e.stopPropagation(); // Evitar que seleccione la radio al hacer clic en la estrella
+    const index = favorites.indexOf(id);
+    if (index > -1) {
+        favorites.splice(index, 1);
+    } else {
+        favorites.push(id);
+    }
+    saveFavorites();
+    
+    if (showFavoritesOnly) {
+        filtrarEstaciones(searchInput.value); // Refiltrar si estamos en vista de favoritos
+    } else {
+        renderListas(); // Solo actualizar UI
+    }
 }
 
 // ==========================================================================
@@ -77,6 +118,21 @@ function setupEventListeners() {
         clearSearchBtn.classList.add('hidden');
         filtrarEstaciones('');
         searchInput.focus();
+    });
+
+    // --- Filtro Favoritos ---
+    toggleFavoritesBtn.addEventListener('click', () => {
+        showFavoritesOnly = !showFavoritesOnly;
+        if (showFavoritesOnly) {
+            toggleFavoritesBtn.classList.add('bg-primary', 'text-white', 'border-primary');
+            toggleFavoritesBtn.classList.remove('bg-white', 'text-secondary', 'border-light-border');
+            toggleFavoritesBtn.innerHTML = `<svg class="fav-icon-solid text-star" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Ocultar Favoritos`;
+        } else {
+            toggleFavoritesBtn.classList.remove('bg-primary', 'text-white', 'border-primary');
+            toggleFavoritesBtn.classList.add('bg-white', 'text-secondary', 'border-light-border');
+            toggleFavoritesBtn.innerHTML = `<svg class="fav-icon-outline" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Ver Mis Favoritos`;
+        }
+        filtrarEstaciones(searchInput.value);
     });
 
     // --- Paginación ---
@@ -185,11 +241,14 @@ async function cargarRadiosLaPaz() {
 }
 
 function filtrarEstaciones(query) {
-    const q = query.toLowerCase();
-    filteredStations = stations.filter(s => 
-        s.name.toLowerCase().includes(q) || 
-        s.state.toLowerCase().includes(q)
-    );
+    const q = query ? query.toLowerCase() : '';
+    
+    filteredStations = stations.filter(s => {
+        const matchesQuery = s.name.toLowerCase().includes(q) || s.state.toLowerCase().includes(q);
+        const matchesFav = showFavoritesOnly ? favorites.includes(s.id) : true;
+        return matchesQuery && matchesFav;
+    });
+    
     currentPage = 1; // Reseteamos a la página 1 al buscar
     renderListas();
 }
@@ -231,6 +290,7 @@ function renderListas() {
 
 function crearElementoEstacion(station, originalIndex) {
     const isCurrent = currentStation && currentStation.id === station.id;
+    const isFav = favorites.includes(station.id);
     
     const div = document.createElement('div');
     div.className = `station-card ${isCurrent ? 'active' : ''}`;
@@ -247,20 +307,29 @@ function crearElementoEstacion(station, originalIndex) {
                 <div class="station-state">${station.state}</div>
             </div>
         </div>
-        <div class="station-actions shrink-0">
-            <!-- No más botón de fav en la lista por simplicidad, solo reproducir -->
-            <svg class="text-secondary ${isCurrent ? 'text-primary' : ''}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
+        <div class="station-actions shrink-0 flex items-center gap-2">
+            <button class="fav-btn p-2" aria-label="Favorito">
+                <svg class="${isFav ? 'text-star fill-current' : 'text-secondary'} hover:text-star transition-colors" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            </button>
+            <svg class="text-secondary ${isCurrent ? 'text-primary' : ''} ml-1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
         </div>
     `;
 
+    // Evento de reproducir al dar clic en la tarjeta
     div.addEventListener('click', () => {
         if (isCurrent && isPlaying) {
-            togglePlay(); // Si toca la misma que suena, pausa
+            togglePlay(); 
         } else if (isCurrent && !isPlaying) {
-            togglePlay(); // Si toca la misma pausada, reproduce
+            togglePlay(); 
         } else {
-            seleccionarEstacion(station, originalIndex); // Nueva emisora
+            seleccionarEstacion(station, originalIndex);
         }
+    });
+    
+    // Evento del botón de favorito
+    const favBtn = div.querySelector('.fav-btn');
+    favBtn.addEventListener('click', (e) => {
+        toggleFavorite(station.id, e);
     });
 
     return div;
