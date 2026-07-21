@@ -3,43 +3,30 @@
 // ==========================================================================
 let stations = [];
 let filteredStations = [];
-let favorites = [];
 let currentStation = null;
 let currentIndex = -1;
 let isPlaying = false;
 let isMuted = false;
 let previousVolume = 0.8;
 
+// Paginación
+let currentPage = 1;
+const itemsPerPage = 10;
+
 // ==========================================================================
-// ELEMENTOS DEL DOM - LISTA / BÚSQUEDA
+// ELEMENTOS DEL DOM
 // ==========================================================================
 const searchInput = document.getElementById('search-input');
 const clearSearchBtn = document.getElementById('clear-search');
-const favoritesSection = document.getElementById('favorites-section');
-const favoritesContainer = document.getElementById('favorites-container');
 const estacionesContainer = document.getElementById('estaciones-container');
 const statusMessage = document.getElementById('status-message');
 
-// ==========================================================================
-// ELEMENTOS DEL DOM - MINI PLAYER
-// ==========================================================================
-const miniPlayer = document.getElementById('mini-player');
-const miniPlayerInfo = document.getElementById('mini-player-info');
-const miniPlayBtn = document.getElementById('mini-play-btn');
-const miniPlayIcon = document.getElementById('mini-play-icon');
-const miniPauseIcon = document.getElementById('mini-pause-icon');
-const miniPlayerBuffering = document.getElementById('mini-player-buffering');
-const miniPlayingTitle = document.getElementById('mini-playing-title');
-const miniPlayingSubtitle = document.getElementById('mini-playing-subtitle');
-const miniWaveVisualizer = document.getElementById('mini-wave-visualizer');
+// Controles de Paginación
+const pagePrevBtn = document.getElementById('page-prev-btn');
+const pageNextBtn = document.getElementById('page-next-btn');
+const pageIndicator = document.getElementById('page-indicator');
 
-// ==========================================================================
-// ELEMENTOS DEL DOM - REPRODUCTOR COMPLETO
-// ==========================================================================
-const listView = document.getElementById('list-view');
-const fullPlayer = document.getElementById('full-player');
-const backToListBtn = document.getElementById('back-to-list-btn');
-
+// Reproductor
 const fullPlayBtn = document.getElementById('full-play-btn');
 const fullPlayIcon = document.getElementById('full-play-icon');
 const fullPauseIcon = document.getElementById('full-pause-icon');
@@ -55,10 +42,8 @@ const largeAvatarLetter = document.getElementById('large-avatar-letter');
 const largeAvatar = document.getElementById('large-avatar');
 const pulseRing1 = document.getElementById('pulse-ring-1');
 const pulseRing2 = document.getElementById('pulse-ring-2');
-const largeWaveViz = document.querySelector('.large-wave-visualizer');
 
 const fullVolumeSlider = document.getElementById('full-volume-slider');
-const fullVolumePercent = document.getElementById('full-volume-percent');
 const fullVolumeMuteBtn = document.getElementById('full-volume-mute-btn');
 const fullVolHighIcon = document.getElementById('full-vol-high-icon');
 const fullVolMuteIcon = document.getElementById('full-vol-mute-icon');
@@ -72,38 +57,8 @@ const audioPlayer = document.getElementById('native-audio');
 // INICIALIZACIÓN
 // ==========================================================================
 function init() {
-    loadFavorites();
     setupEventListeners();
     cargarRadiosLaPaz();
-}
-
-// ==========================================================================
-// FAVORITOS
-// ==========================================================================
-function loadFavorites() {
-    try {
-        const saved = localStorage.getItem('radio_lapaz_favorites');
-        favorites = saved ? JSON.parse(saved) : [];
-    } catch (e) {
-        favorites = [];
-    }
-}
-
-function saveFavorites() {
-    try {
-        localStorage.setItem('radio_lapaz_favorites', JSON.stringify(favorites));
-    } catch (e) {}
-}
-
-function toggleFavorite(id) {
-    const index = favorites.indexOf(id);
-    if (index > -1) {
-        favorites.splice(index, 1);
-    } else {
-        favorites.push(id);
-    }
-    saveFavorites();
-    renderListas();
 }
 
 // ==========================================================================
@@ -124,21 +79,31 @@ function setupEventListeners() {
         searchInput.focus();
     });
 
-    // --- Mini Player ---
-    miniPlayerInfo.addEventListener('click', abrirReproductorCompleto);
-    miniPlayBtn.addEventListener('click', togglePlay);
+    // --- Paginación ---
+    pagePrevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            renderListas();
+        }
+    });
+
+    pageNextBtn.addEventListener('click', () => {
+        const maxPages = Math.ceil(filteredStations.length / itemsPerPage);
+        if (currentPage < maxPages) {
+            currentPage++;
+            renderListas();
+        }
+    });
 
     // --- Reproductor Completo ---
-    backToListBtn.addEventListener('click', cerrarReproductorCompleto);
     fullPlayBtn.addEventListener('click', togglePlay);
     prevStationBtn.addEventListener('click', reproducirAnterior);
     nextStationBtn.addEventListener('click', reproducirSiguiente);
 
-    // --- Volumen (Reproductor Completo) ---
+    // --- Volumen ---
     fullVolumeSlider.addEventListener('input', (e) => {
         const val = parseFloat(e.target.value);
         audioPlayer.volume = val;
-        fullVolumePercent.textContent = Math.round(val * 100) + '%';
         if (val === 0) {
             setMuteState(true);
         } else {
@@ -151,330 +116,272 @@ function setupEventListeners() {
         if (isMuted) {
             audioPlayer.volume = previousVolume;
             fullVolumeSlider.value = previousVolume;
-            fullVolumePercent.textContent = Math.round(previousVolume * 100) + '%';
             setMuteState(false);
         } else {
             previousVolume = parseFloat(fullVolumeSlider.value) || 0.8;
             audioPlayer.volume = 0;
             fullVolumeSlider.value = 0;
-            fullVolumePercent.textContent = '0%';
             setMuteState(true);
         }
     });
 
     // --- Eventos del elemento <audio> ---
-    audioPlayer.addEventListener('waiting', () => {
-        setBufferingUI(true);
-    });
-
+    audioPlayer.addEventListener('waiting', () => setBufferingUI(true));
     audioPlayer.addEventListener('playing', () => {
         setBufferingUI(false);
         setPlayingUI(true);
     });
-
     audioPlayer.addEventListener('pause', () => {
         setBufferingUI(false);
         setPlayingUI(false);
     });
-
     audioPlayer.addEventListener('error', () => {
         setBufferingUI(false);
         setPlayingUI(false);
         showPlayerError();
     });
-
-    // Cerrar reproductor completo con el botón "Atrás" del hardware Android
-    document.addEventListener('backbutton', () => {
-        if (!fullPlayer.classList.contains('translate-y-full')) {
-            cerrarReproductorCompleto();
-        }
-    });
 }
 
 // ==========================================================================
-// NAVEGACIÓN DE VISTAS
-// ==========================================================================
-function abrirReproductorCompleto() {
-    fullPlayer.classList.remove('translate-y-full');
-    document.body.style.overflow = 'hidden';
-}
-
-function cerrarReproductorCompleto() {
-    fullPlayer.classList.add('translate-y-full');
-    document.body.style.overflow = '';
-}
-
-// ==========================================================================
-// CARGA DE RADIOS DESDE LA API
+// CÓDIGO PRINCIPAL / API
 // ==========================================================================
 async function cargarRadiosLaPaz() {
+    statusMessage.classList.remove('hidden');
+    estacionesContainer.innerHTML = '';
+    
     try {
-        const respuesta = await fetch('https://de1.api.radio-browser.info/json/stations/bycountrycodeexact/BO');
-        const radios = await respuesta.json();
+        const url = 'https://de1.api.radio-browser.info/json/stations/search?state=La+Paz&countrycode=BO&hidebroken=true&order=clickcount&reverse=true&limit=100';
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos de timeout
+        
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeoutId);
 
-        // Filtrar por La Paz (en estado o nombre)
-        stations = radios.filter(r => {
-            const estado = (r.state || '').toLowerCase();
-            const nombre = (r.name || '').toLowerCase();
-            return estado.includes('paz') || nombre.includes('paz');
-        });
-
-        // Ordenar alfabéticamente
-        stations.sort((a, b) =>
-            (a.name || '').toLowerCase().localeCompare((b.name || '').toLowerCase())
-        );
-
+        if (!response.ok) throw new Error('Error en la red');
+        
+        const data = await response.json();
+        
+        // Limpiamos los datos
+        stations = data.map(station => ({
+            id: station.stationuuid,
+            name: station.name.trim(),
+            url: station.url_resolved || station.url,
+            tags: station.tags ? station.tags.split(',') : [],
+            state: station.state || 'La Paz',
+            favicon: station.favicon || ''
+        }));
+        
         filteredStations = [...stations];
+        currentPage = 1;
+        
         statusMessage.classList.add('hidden');
         renderListas();
-
+        
     } catch (error) {
-        console.error('Error al conectar con la API:', error);
-        statusMessage.innerHTML = `
-            <svg class="mx-auto mb-2" style="color:var(--danger)" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <p style="color:var(--danger)" class="font-semibold">Error de conexión</p>
-            <p class="text-xs mt-1">No se pudieron cargar las emisoras.</p>
-        `;
+        console.error('Error fetching radios:', error);
+        statusMessage.innerHTML = `<span class="text-danger">⚠️ Error de conexión.</span><br><button onclick="cargarRadiosLaPaz()" class="mt-2 text-primary font-semibold underline">Reintentar</button>`;
     }
 }
 
-// ==========================================================================
-// FILTRADO DE BÚSQUEDA
-// ==========================================================================
 function filtrarEstaciones(query) {
-    const q = query.toLowerCase().trim();
-    filteredStations = q
-        ? stations.filter(r =>
-            (r.name || '').toLowerCase().includes(q) ||
-            (r.state || '').toLowerCase().includes(q) ||
-            (r.tags || '').toLowerCase().includes(q)
-          )
-        : [...stations];
+    const q = query.toLowerCase();
+    filteredStations = stations.filter(s => 
+        s.name.toLowerCase().includes(q) || 
+        s.state.toLowerCase().includes(q)
+    );
+    currentPage = 1; // Reseteamos a la página 1 al buscar
     renderListas();
 }
 
 // ==========================================================================
-// RENDER DE LISTAS
+// RENDERIZADO DOM
 // ==========================================================================
 function renderListas() {
-    // Favoritos (ocultar si hay búsqueda activa)
-    const favStations = stations.filter(r => favorites.includes(r.changeuuid));
-    const hayBusqueda = searchInput.value.trim().length > 0;
-
-    if (favStations.length === 0 || hayBusqueda) {
-        favoritesSection.classList.add('hidden');
-    } else {
-        favoritesSection.classList.remove('hidden');
-        favoritesContainer.innerHTML = '';
-        favStations.forEach(r => favoritesContainer.appendChild(crearTarjetaEstacion(r)));
-    }
-
-    // Todas las estaciones
     estacionesContainer.innerHTML = '';
+    
+    const maxPages = Math.ceil(filteredStations.length / itemsPerPage) || 1;
+    
+    // Asegurarse de que la página actual no se salga del rango tras buscar
+    if (currentPage > maxPages) currentPage = maxPages;
+    if (currentPage < 1) currentPage = 1;
 
-    if (filteredStations.length === 0) {
-        estacionesContainer.innerHTML = `
-            <div class="card p-6 text-center text-secondary text-sm">
-                No se encontraron emisoras para "<strong>${searchInput.value}</strong>".
-            </div>`;
+    // Actualizar UI de Paginación
+    pageIndicator.textContent = `Pág ${currentPage}/${maxPages}`;
+    pagePrevBtn.disabled = currentPage === 1;
+    pageNextBtn.disabled = currentPage === maxPages;
+
+    // Obtener los items de la página actual
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageItems = filteredStations.slice(start, end);
+
+    if (pageItems.length === 0) {
+        estacionesContainer.innerHTML = `<div class="text-center text-secondary py-6 text-sm">No se encontraron emisoras.</div>`;
         return;
     }
 
-    filteredStations.forEach(r => estacionesContainer.appendChild(crearTarjetaEstacion(r)));
+    // Renderizar
+    pageItems.forEach(station => {
+        const originalIndex = stations.findIndex(s => s.id === station.id);
+        const el = crearElementoEstacion(station, originalIndex);
+        estacionesContainer.appendChild(el);
+    });
 }
 
-// ==========================================================================
-// CREAR TARJETA DE ESTACIÓN
-// ==========================================================================
-function crearTarjetaEstacion(radio) {
-    const card = document.createElement('div');
-    const esActiva = currentStation && currentStation.changeuuid === radio.changeuuid;
-    const esFav = favorites.includes(radio.changeuuid);
-    const inicial = (radio.name || '?').charAt(0).toUpperCase();
+function crearElementoEstacion(station, originalIndex) {
+    const isCurrent = currentStation && currentStation.id === station.id;
+    
+    const div = document.createElement('div');
+    div.className = `station-card ${isCurrent ? 'active' : ''}`;
+    
+    // Avatar inicial
+    let inicial = station.name.charAt(0).toUpperCase();
+    if (!inicial.match(/[A-Z]/i)) inicial = '🎵';
 
-    card.className = `station-card card ${esActiva ? 'active' : ''}`;
-    card.dataset.id = radio.changeuuid;
-
-    card.innerHTML = `
+    div.innerHTML = `
         <div class="station-info">
-            <div class="station-avatar">${inicial}</div>
+            <div class="station-avatar font-outfit">${inicial}</div>
             <div class="station-details">
-                <div class="station-name">${radio.name || 'Emisora sin nombre'}</div>
-                <div class="station-state">${radio.state || 'Bolivia'}</div>
+                <div class="station-name">${station.name}</div>
+                <div class="station-state">${station.state}</div>
             </div>
         </div>
-        <div class="station-actions">
-            <button class="fav-btn ${esFav ? 'active' : ''}" aria-label="Favorito">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="${esFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-            </button>
-            <div class="mini-play-btn">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-            </div>
+        <div class="station-actions shrink-0">
+            <!-- No más botón de fav en la lista por simplicidad, solo reproducir -->
+            <svg class="text-secondary ${isCurrent ? 'text-primary' : ''}" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
         </div>
     `;
 
-    // Click en la tarjeta → reproducir y abrir reproductor grande
-    card.addEventListener('click', (e) => {
-        if (e.target.closest('.fav-btn')) return;
-        seleccionarRadio(radio);
-        abrirReproductorCompleto();
+    div.addEventListener('click', () => {
+        if (isCurrent && isPlaying) {
+            togglePlay(); // Si toca la misma que suena, pausa
+        } else if (isCurrent && !isPlaying) {
+            togglePlay(); // Si toca la misma pausada, reproduce
+        } else {
+            seleccionarEstacion(station, originalIndex); // Nueva emisora
+        }
     });
 
-    // Click en estrella → solo marcar favorito
-    card.querySelector('.fav-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleFavorite(radio.changeuuid);
-    });
-
-    return card;
+    return div;
 }
 
 // ==========================================================================
-// CONTROL DE REPRODUCCIÓN
+// REPRODUCCIÓN Y CONTROL
 // ==========================================================================
-function seleccionarRadio(radio) {
-    // Si es la misma radio activa, solo abrir reproductor
-    if (currentStation && currentStation.changeuuid === radio.changeuuid) {
-        return;
-    }
-
-    currentStation = radio;
-    currentIndex = filteredStations.findIndex(r => r.changeuuid === radio.changeuuid);
-    if (currentIndex === -1) currentIndex = stations.findIndex(r => r.changeuuid === radio.changeuuid);
-
-    // Actualizar UI de metadatos
-    actualizarMetadatosUI(radio);
-
-    // Cargar y reproducir
-    const url = radio.url_resolved || radio.url;
-    audioPlayer.src = url;
-    audioPlayer.volume = parseFloat(fullVolumeSlider.value);
-    audioPlayer.load();
+function seleccionarEstacion(station, index) {
+    currentStation = station;
+    currentIndex = index;
+    
+    actualizarInfoReproductor(station);
+    
+    audioPlayer.src = station.url;
+    audioPlayer.volume = previousVolume;
+    
     audioPlayer.play().catch(e => {
-        console.error('Error reproduciendo:', e);
-        showPlayerError();
+        console.error("Auto-play prevented", e);
+        isPlaying = false;
+        setPlayingUI(false);
+        setBufferingUI(false);
     });
 
-    // Mostrar mini player
-    miniPlayer.classList.remove('hidden');
-
-    // Actualizar tarjetas activas
-    actualizarTarjetasActivas(radio.changeuuid);
-}
-
-function actualizarMetadatosUI(radio) {
-    const nombre = radio.name || 'Emisora sin nombre';
-    const estado = radio.state || 'Bolivia';
-    const inicial = nombre.charAt(0).toUpperCase();
-
-    // Mini player
-    miniPlayingTitle.textContent = nombre;
-    miniPlayingSubtitle.textContent = estado;
-
-    // Reproductor completo
-    fullPlayingTitle.textContent = nombre;
-    fullPlayingState.textContent = estado;
-    largeAvatarLetter.textContent = inicial;
-}
-
-function actualizarTarjetasActivas(id) {
-    document.querySelectorAll('.station-card').forEach(el => {
-        el.classList.toggle('active', el.dataset.id === id);
-    });
+    isPlaying = true;
+    setPlayingUI(true);
+    renderListas(); // Para actualizar clases 'active'
 }
 
 function togglePlay() {
     if (!currentStation) return;
 
-    if (audioPlayer.paused) {
-        audioPlayer.play().catch(showPlayerError);
-    } else {
+    if (isPlaying) {
         audioPlayer.pause();
+        isPlaying = false;
+        setPlayingUI(false);
+    } else {
+        audioPlayer.play().catch(e => console.error(e));
+        isPlaying = true;
+        setPlayingUI(true);
     }
-}
-
-function reproducirSiguiente() {
-    if (filteredStations.length === 0) return;
-    const siguiente = (currentIndex + 1) % filteredStations.length;
-    currentIndex = siguiente;
-    seleccionarRadio(filteredStations[siguiente]);
 }
 
 function reproducirAnterior() {
-    if (filteredStations.length === 0) return;
-    const anterior = (currentIndex - 1 + filteredStations.length) % filteredStations.length;
-    currentIndex = anterior;
-    seleccionarRadio(filteredStations[anterior]);
+    if (stations.length === 0) return;
+    let newIndex = currentIndex - 1;
+    if (newIndex < 0) newIndex = stations.length - 1;
+    seleccionarEstacion(stations[newIndex], newIndex);
+}
+
+function reproducirSiguiente() {
+    if (stations.length === 0) return;
+    let newIndex = currentIndex + 1;
+    if (newIndex >= stations.length) newIndex = 0;
+    seleccionarEstacion(stations[newIndex], newIndex);
+}
+
+function actualizarInfoReproductor(station) {
+    let inicial = station.name.charAt(0).toUpperCase();
+    if (!inicial.match(/[A-Z]/i)) inicial = '🎵';
+
+    // Reproductor Completo Fijo
+    fullPlayingTitle.textContent = station.name;
+    fullPlayingSubtitle.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-primary"><path d="M12 2a8 8 0 0 0-8 8c0 5.25 8 12 8 12s8-6.75 8-12a8 8 0 0 0-8-8z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <span>${station.state}</span>
+    `;
+    largeAvatarLetter.textContent = inicial;
 }
 
 // ==========================================================================
-// ACTUALIZACIÓN DE UI DE REPRODUCCIÓN
+// MANEJO DE UI / ANIMACIONES
 // ==========================================================================
-function setBufferingUI(isBuffering) {
-    if (isBuffering) {
-        // Mini player
-        miniPlayIcon.classList.add('hidden');
-        miniPauseIcon.classList.add('hidden');
-        miniPlayerBuffering.classList.remove('hidden');
-
-        // Reproductor completo
-        fullPlayIcon.classList.add('hidden');
-        fullPauseIcon.classList.add('hidden');
-        fullPlayerBuffering.classList.remove('hidden');
-    } else {
-        miniPlayerBuffering.classList.add('hidden');
-        fullPlayerBuffering.classList.add('hidden');
-    }
-}
-
 function setPlayingUI(playing) {
-    isPlaying = playing;
-
-    // Mini player
-    miniPlayIcon.classList.toggle('hidden', playing);
-    miniPauseIcon.classList.toggle('hidden', !playing);
-
-    // Reproductor completo
-    fullPlayIcon.classList.toggle('hidden', playing);
-    fullPauseIcon.classList.toggle('hidden', !playing);
-
-    // Visualizadores y animaciones
-    const miniMusicIcon = document.querySelector('.mini-music-icon');
-
     if (playing) {
-        // Mostrar olas
-        if (miniMusicIcon) miniMusicIcon.classList.add('hidden');
-        miniWaveVisualizer.classList.remove('hidden');
-        largeWaveViz.classList.add('playing');
+        fullPlayIcon.classList.add('hidden');
+        fullPauseIcon.classList.remove('hidden');
+        
         largeAvatar.classList.add('rotating');
         pulseRing1.classList.remove('hidden');
         pulseRing2.classList.remove('hidden');
     } else {
-        if (miniMusicIcon) miniMusicIcon.classList.remove('hidden');
-        miniWaveVisualizer.classList.add('hidden');
-        largeWaveViz.classList.remove('playing');
+        fullPlayIcon.classList.remove('hidden');
+        fullPauseIcon.classList.add('hidden');
+        
         largeAvatar.classList.remove('rotating');
         pulseRing1.classList.add('hidden');
         pulseRing2.classList.add('hidden');
     }
 }
 
+function setBufferingUI(isBuffering) {
+    if (isBuffering) {
+        fullPlayIcon.classList.add('hidden');
+        fullPauseIcon.classList.add('hidden');
+        fullPlayerBuffering.classList.remove('hidden');
+    } else {
+        fullPlayerBuffering.classList.add('hidden');
+        if (isPlaying) {
+            fullPauseIcon.classList.remove('hidden');
+        } else {
+            fullPlayIcon.classList.remove('hidden');
+        }
+    }
+}
+
 function setMuteState(muted) {
     isMuted = muted;
-    fullVolHighIcon.classList.toggle('hidden', muted);
-    fullVolMuteIcon.classList.toggle('hidden', !muted);
+    if (muted) {
+        fullVolHighIcon.classList.add('hidden');
+        fullVolMuteIcon.classList.remove('hidden');
+    } else {
+        fullVolHighIcon.classList.remove('hidden');
+        fullVolMuteIcon.classList.add('hidden');
+    }
 }
 
 function showPlayerError() {
-    fullPlayingState.textContent = '⚠ Transmisión no disponible';
-    setTimeout(() => {
-        if (currentStation) {
-            fullPlayingState.textContent = currentStation.state || 'Bolivia';
-        }
-    }, 4000);
+    fullPlayingTitle.textContent = "Error al reproducir";
+    fullPlayingSubtitle.textContent = "Verifica tu conexión";
 }
 
-// ==========================================================================
-// ARRANCAR LA APP
-// ==========================================================================
+// Iniciar aplicación
 document.addEventListener('DOMContentLoaded', init);
